@@ -1,20 +1,47 @@
 #pragma once
-
-#include <set>
 #include <string>
-using namespace std;
-//全局配置参数 (Configuration)
+#include <vector>
 
-extern double SIGMA_0;           // 基准标准差
-extern double SIGMA_RANGE;       // 测距误差
-extern double SIGMA_POS_LOW;   // 低精度惯导误差
-extern double SIGMA_POS_HIGH;     // 高精度惯导误差
-extern int    N_NODE; //总节点数
-extern double STAGE1_SEC; //平飞段开始时间,也即直飞段时长 (秒)
-extern string FILE_PREFIX; //输入输出文件前缀 X(Y)，其中 X 是节点总数，Y 是高精度点数量 
-extern std::set<int> KNOWN_NODE_IDS;
+// 1. 定义 IMU 精度模式的参数结构
+struct PrecisionMode {
+    std::vector<double> gyro_bias_dph;
+    std::vector<double> acc_bias_mps2;
+    std::vector<double> gyro_markov_intensity_dph;
+    std::vector<double> gyro_markov_correlation_time_s;
+    std::vector<double> acc_markov_intensity_mps2;
+    std::vector<double> acc_markov_correlation_time_s;
+    std::vector<double> gyro_white_noise_dph;
+    std::vector<double> acc_white_noise_mps2;
+    std::vector<double> dKg_ppm_matrix;
+    std::vector<double> dKa_ppm_matrix;
+};
 
-// 辅助函数判断是否为高精度点
-inline bool isHighPrecision(int node_id) {
-    return KNOWN_NODE_IDS.find(node_id) != KNOWN_NODE_IDS.end();
-}
+// 2. 定义单个节点的配置结构
+struct NodeConfig {
+    std::string name;
+    std::vector<double> offset;
+    int precision_mode;
+    std::vector<double> initial_alignment_error;
+};
+
+// 3. 定义全局应用配置结构
+struct AppConfig {
+    // --- 命令行参数 ---
+    int totalNodes = 0;
+    int highPrecisionNodes = 0;
+    std::string configFilePath;
+
+    // --- JSON 全局参数 ---
+    std::vector<double> center_pos;
+    double range_noise_std_m = 0.0;
+    int ranging_interval_ms = 0;
+    double direction_angle_deg = 0.0;
+    int imu_sample_interval_ms = 0;
+
+    // --- IMU 精度模式配置 ---
+    PrecisionMode mode1;
+    PrecisionMode mode2;
+
+    // --- 节点列表 ---
+    std::vector<NodeConfig> nodes;
+};
